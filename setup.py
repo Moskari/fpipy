@@ -31,6 +31,7 @@ test_requirements = [
 extra_requirements = {
     'ENVI': ['rasterio'],
     'dask': ['dask'],
+    'tensorflow': ['tensorflow>=2.0'],
     }
 
 setup(

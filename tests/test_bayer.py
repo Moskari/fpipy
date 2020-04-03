@@ -17,7 +17,8 @@ from fpipy.bayer import (
     mosaic,
     invert_RGB,
     )
-from hypothesis import given
+from fpipy.tensorflow import demosaic_bilin_float_tensorflow
+from hypothesis import given, settings
 import hypothesis.strategies as st
 import hypothesis.extra.numpy as npst
 import numpy as np
@@ -28,6 +29,7 @@ import numpy as np
         demosaic_bilin_12bit,
         demosaic_bilin_12bit_scipy,
         demosaic_bilin_float_scipy,
+        lambda *args, **kwargs: demosaic_bilin_float_tensorflow(*args, **kwargs).numpy(),
     ])
 def demosaic_method(request):
     return request.param
@@ -141,6 +143,7 @@ def test_mosaic_shape(rgb, pattern):
     np.testing.assert_equal(result.shape, rgb.shape[1:])
 
 
+@settings(deadline=None)
 @given(
     cfa=_cfa_images_12bit_centered,
     pattern=st.sampled_from(BayerPattern),
@@ -150,11 +153,14 @@ def test_demosaic_methods_agree_12bit(cfa, pattern):
     demosaic_int = demosaic_bilin_12bit(cfa, masks)
     demosaic_int_scipy = demosaic_bilin_12bit_scipy(cfa, masks)
     demosaic_float = demosaic_bilin_float_scipy(cfa, masks)
+    demosaic_tensorflow = demosaic_bilin_float_tensorflow(cfa, masks).numpy()
 
     np.testing.assert_equal(demosaic_int, demosaic_int_scipy)
     np.testing.assert_equal(demosaic_int, demosaic_float)
+    np.testing.assert_equal(demosaic_tensorflow, demosaic_float)
 
 
+@settings(deadline=None)
 @given(
     cfa=_cfa_images_12bit_centered,
     pattern=st.sampled_from(BayerPattern),
